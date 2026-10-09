@@ -50,8 +50,11 @@ jobs:
             echo "data source: main, attested"
           else
             echo "main not attested, falling back to release asset" >&2
+            rm -f "$RUNNER_TEMP/data.yml"
             gh release download -R privacyguides/verified-apps \
               -p "data.yml" --dir "$RUNNER_TEMP" --clobber
+            verify_main "$RUNNER_TEMP/data.yml"
+            echo "data source: release asset, attested"
           fi
 
       - name: Download rotated keys

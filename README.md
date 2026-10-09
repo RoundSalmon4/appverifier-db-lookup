@@ -8,14 +8,16 @@ Upstream is canonical: https://privacyguides.github.io/verified-apps/
 
 For each package: the AppVerifier import string (package name plus fingerprints), the sources each fingerprint came from, the tested file hash where upstream recorded one, and any rotated keys AppVerifier BG has observed but that are not yet in the upstream entry.
 
-Search is by package name. A result here means the package is registered with those keys. It does not prove that a specific file you hold is genuine, so cross check the source. Not being listed means unverified, not untrusted.
+Search by package name or APK SHA-256. A result here means the package is registered with those keys. It does not prove that a specific file you hold is genuine, so cross check the source. Not being listed means unverified, not untrusted.
 
 ## Data sources and attribution
 
-- Signing data: [privacyguides/verified-apps](https://github.com/privacyguides/verified-apps) `data.yml`, licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The workflow verifies the GitHub attestation before using it, with the release asset as a fallback.
+- Signing data: [privacyguides/verified-apps](https://github.com/privacyguides/verified-apps) `data.yml`, licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The workflow verifies the file's GitHub attestation before using it, from main first and from the release asset as a fallback, both checked the same way.
 - Rotated keys: the `rotated-keys/rotated_keys.json` store from [AppVerifier BG](https://github.com/RoundSalmon4/AppVerifierBG), merged read only over the network.
 
-This project is not affiliated with Privacy Guides.
+This project is not affiliated with Privacy Guides. The site only verifies the upstream attestation on `data.yml`. It does not sign or attest its own output, and the rotated keys are not attested.
+
+Caveat on the fallback: the release asset path assumes upstream attests that asset with the same signing identity as main. That is the common case, but it is an assumption about upstream, not something this project controls. If neither the main copy nor the release copy can be verified, the workflow fails rather than publish unverified data.
 
 ## How it works
 
