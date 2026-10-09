@@ -17,7 +17,7 @@ Search by package name or APK SHA-256. A result here means the package is regist
 
 This project is not affiliated with Privacy Guides. The site only verifies the upstream attestation on `data.yml`. It does not sign or attest its own output, and the rotated keys are not attested.
 
-Caveat on the fallback: the release asset path assumes upstream attests that asset with the same signing identity as main. That is the common case, but it is an assumption about upstream, not something this project controls. If neither the main copy nor the release copy can be verified, the workflow fails rather than publish unverified data.
+Caveat on the fallback: if the main copy fails verification, the workflow tries the copy attached to the latest upstream release and checks that one the same way. That only works if upstream signed the release copy the same way it signs main, which is the normal case but depends on upstream. If neither copy verifies, the workflow fails rather than publish unverified data.
 
 ## How it works
 
@@ -29,10 +29,6 @@ Caveat on the fallback: the release asset path assumes upstream attests that ass
 4. Publishes `public/` to GitHub Pages
 
 `scripts/generate_site.py` merges the two sources and sorts packages by name. `web/index.html` is the static page, which loads `data.json` and filters client side.
-
-## First time setup
-
-Enable Pages once: repository Settings, Pages, Source: GitHub Actions. After that the scheduled workflow publishes automatically.
 
 ## Local test
 
