@@ -1,6 +1,10 @@
 name: Generate Site
 
 on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
   schedule:
     - cron: "0 5 * * *"
   workflow_dispatch:
