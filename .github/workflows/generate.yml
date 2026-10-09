@@ -1,0 +1,84 @@
+name: Generate Site
+
+on:
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  attestations: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Download verified-apps data.yml
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          verify_main() {
+            gh attestation verify -R privacyguides/verified-apps \
+              --cert-identity-regex 'https://github.com/privacyguides/.github/.github/workflows/sign-artifact.yml*' \
+              "$1"
+          }
+          if curl -fsSL -o "$RUNNER_TEMP/data.yml" \
+              "https://raw.githubusercontent.com/privacyguides/verified-apps/main/data.yml" \
+              && verify_main "$RUNNER_TEMP/data.yml"; then
+            echo "data source: main, attested"
+          else
+            echo "main not attested, falling back to release asset" >&2
+            gh release download -R privacyguides/verified-apps \
+              -p "data.yml" --dir "$RUNNER_TEMP" --clobber
+          fi
+
+      - name: Download rotated keys
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/rotated_keys.json" \
+            "https://raw.githubusercontent.com/RoundSalmon4/AppVerifierBG/feature/all-enhancements/rotated-keys/rotated_keys.json" \
+            || { echo "rotated keys unavailable, continuing without them"; rm -f "$RUNNER_TEMP/rotated_keys.json"; }
+
+      - name: Generate site
+        run: |
+          python scripts/generate_site.py \
+            --data-yml "$RUNNER_TEMP/data.yml" \
+            --rotated-json "$RUNNER_TEMP/rotated_keys.json" \
+            --template web/index.html \
+            --outdir public
+
+      - name: Configure Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
