@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AppVerifier DB Lookup</title>
+<title>AppVerifier BG Database Lookup</title>
 <style>
   :root {
     --bg: #101418;
@@ -23,7 +23,7 @@
     font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
     line-height: 1.45;
   }
-  header, main { max-width: 920px; margin: 0 auto; padding: 0 16px; }
+  header, main, footer { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
   header { padding-top: 32px; }
   h1 { font-size: 1.5rem; margin: 0 0 4px; }
   .sub { color: var(--muted); font-size: 0.9rem; margin: 0 0 16px; }
@@ -38,8 +38,9 @@
     margin-bottom: 16px;
   }
   .notice a { color: var(--accent); }
+  .controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
   input[type=search] {
-    width: 100%;
+    flex: 1 1 320px;
     padding: 12px 14px;
     font-size: 1rem;
     background: var(--panel);
@@ -48,146 +49,174 @@
     border-radius: 6px;
     font-family: var(--mono);
   }
-  #status { color: var(--muted); font-size: 0.85rem; margin: 12px 2px; }
-  .app {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 14px;
-    margin-bottom: 12px;
-  }
-  .pkg { font-family: var(--mono); font-size: 0.95rem; font-weight: 600; word-break: break-all; }
-  .fp { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); word-break: break-all; margin-top: 2px; }
+  label.chk { color: var(--muted); font-size: 0.85rem; white-space: nowrap; cursor: pointer; }
+  #status { color: var(--muted); font-size: 0.85rem; margin: 8px 2px 12px; }
+  .wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; }
+  table { border-collapse: collapse; width: 100%; min-width: 720px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { position: sticky; top: 0; background: #141a20; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); z-index: 1; }
+  tr:last-child td { border-bottom: none; }
+  .pkg { font-family: var(--mono); font-size: 0.9rem; font-weight: 600; word-break: break-all; }
+  .fp { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); word-break: break-all; }
   .fp.rotated { color: var(--rotated); }
-  .row { margin-top: 8px; }
-  .label { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
-  .src { font-size: 0.82rem; color: var(--text); margin-top: 4px; }
-  .src .meta { color: var(--muted); }
-  button {
-    background: transparent;
-    color: var(--accent);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 4px 10px;
-    font-size: 0.8rem;
-    cursor: pointer;
-    margin-top: 8px;
-  }
-  button:hover { border-color: var(--accent); }
+  .src { font-size: 0.82rem; margin-bottom: 4px; }
+  .src .hash { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); word-break: break-all; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
   .tag {
     display: inline-block;
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     color: var(--rotated);
     border: 1px solid var(--rotated);
     border-radius: 4px;
     padding: 1px 6px;
-    margin-left: 6px;
-    vertical-align: middle;
+    margin-top: 4px;
   }
-  footer {
-    max-width: 920px;
-    margin: 24px auto 48px;
-    padding: 0 16px;
-    color: var(--muted);
-    font-size: 0.78rem;
-  }
+  .issues a { display: inline-block; margin: 0 6px 4px 0; font-size: 0.8rem; }
+  footer { padding: 24px 16px 48px; color: var(--muted); font-size: 0.78rem; }
   footer a { color: var(--accent); }
 </style>
 </head>
 <body>
 <header>
-  <h1>AppVerifier DB Lookup</h1>
+  <h1>AppVerifier BG Database Lookup</h1>
   <p class="sub">Unofficial, frequently refreshed view of the Privacy Guides verified-apps data, with rotated keys merged in.</p>
   <div class="notice">
-    Not affiliated with Privacy Guides. The data below is derived from
+    Not affiliated with Privacy Guides. Data derived from
     <a href="https://github.com/privacyguides/verified-apps" target="_blank" rel="noopener">privacyguides/verified-apps</a>
-    (CC BY 4.0), and rotated keys observed by AppVerifier BG are added on top.
-    The <a href="https://privacyguides.github.io/verified-apps/" target="_blank" rel="noopener">upstream site</a> is canonical.
-    Registered keys are not proof that a specific file is genuine, so cross check the source.
+    (CC BY 4.0), with rotated keys observed by AppVerifier BG added on top. The
+    <a href="https://privacyguides.github.io/verified-apps/" target="_blank" rel="noopener">upstream site</a> is canonical.
+    A listed key means the package is registered with it, not that any particular file is genuine, so cross check the source.
   </div>
-  <input id="q" type="search" placeholder="Search by package name" autofocus autocomplete="off" spellcheck="false">
+  <div class="controls">
+    <input id="q" type="search" placeholder="Search by package name or APK SHA-256" autofocus autocomplete="off" spellcheck="false">
+    <label class="chk"><input id="rotatedOnly" type="checkbox"> Only rotated</label>
+  </div>
   <div id="status">Loading</div>
 </header>
-<main id="results"></main>
+<main>
+  <div class="wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Package</th>
+          <th>AppVerifier string</th>
+          <th>More info</th>
+          <th>Package source</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</main>
 <footer>
   Generated from Privacy Guides verified-apps data.yml (CC BY 4.0) with AppVerifier BG rotated keys merged.
-  Source and issues for each entry are shown inline. Upstream is authoritative.
+  Rotated keys are observed on current APKs and are not part of the upstream entry yet. Upstream is authoritative.
 </footer>
 <script>
 const esc = (s) => (s || "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const normHash = (s) => (s || "").replace(/[^0-9a-fA-F]/g, "").toUpperCase();
+
+function issueLink(issue) {
+  if (!issue) return null;
+  let m = issue.match(/^GH-(\d+)$/i);
+  if (m) return "https://github.com/privacyguides/verified-apps/issues/" + m[1];
+  m = issue.match(/^CB-(\d+)$/i);
+  if (m) return "https://codeberg.org/privacyguides/verified-apps/issues/" + m[1];
+  return null;
+}
+
 let DATA = null;
+let ROWS = [];
+
+function matches(p, q) {
+  if (!q) return true;
+  const raw = q.replace(/[:\s]/g, "");
+  const looksHash = /^[0-9a-fA-F]+$/.test(raw) && raw.length >= 16;
+  if (looksHash) {
+    const qh = raw.toUpperCase();
+    const exact = qh.length === 64;
+    const test = (v) => {
+      const n = normHash(v);
+      if (!n) return false;
+      return exact ? n === qh : n.startsWith(qh);
+    };
+    for (const sig of p.signatures) {
+      for (const fp of sig.fingerprints) if (test(fp)) return true;
+      for (const src of sig.sources) if (test(src.sha256)) return true;
+    }
+    for (const fp of p.rotated) if (test(fp)) return true;
+    return false;
+  }
+  return p.package.toLowerCase().includes(q.toLowerCase());
+}
+
+function rowHtml(p) {
+  const rotated = p.rotated && p.rotated.length;
+
+  let pkgCell = '<div class="pkg">' + esc(p.package) + "</div>";
+  if (rotated) {
+    const ri = p.rotated_issue
+      ? ' <a href="https://github.com/RoundSalmon4/AppVerifierBG/issues/' + esc(String(p.rotated_issue)) + '" target="_blank" rel="noopener">source</a>'
+      : "";
+    pkgCell += '<span class="tag">rotated</span>' + ri;
+  }
+
+  let fpCell = "";
+  p.all_fingerprints.forEach(fp => {
+    fpCell += '<div class="fp' + (p.rotated.includes(fp) ? " rotated" : "") + '">' + esc(fp) + "</div>";
+  });
+
+  const seen = new Set();
+  const issueLinks = [];
+  p.signatures.forEach(sig => sig.sources.forEach(src => {
+    if (src.issue && !seen.has(src.issue)) {
+      seen.add(src.issue);
+      const url = issueLink(src.issue);
+      issueLinks.push(url
+        ? '<a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(src.issue) + "</a>"
+        : esc(src.issue));
+    }
+  }));
+  const infoCell = issueLinks.length ? '<div class="issues">' + issueLinks.join("") + "</div>" : '<span class="fp">none</span>';
+
+  let srcCell = "";
+  p.signatures.forEach(sig => sig.sources.forEach(src => {
+    srcCell += '<div class="src">' + esc(src.name || "unknown");
+    if (src.sha256) {
+      srcCell += '<div class="hash" title="' + esc(src.sha256) + '">sha256 ' + esc(src.sha256) + "</div>";
+    }
+    srcCell += "</div>";
+  }));
+  if (!srcCell) srcCell = '<span class="fp">unknown</span>';
+
+  return "<tr><td>" + pkgCell + "</td><td>" + fpCell + "</td><td>" + infoCell + "</td><td>" + srcCell + "</td></tr>";
+}
+
+function render() {
+  const q = document.getElementById("q").value.trim();
+  const onlyRotated = document.getElementById("rotatedOnly").checked;
+  const hits = DATA.packages.filter(p =>
+    (!onlyRotated || (p.rotated && p.rotated.length)) && matches(p, q)
+  );
+  document.getElementById("rows").innerHTML = hits.map(rowHtml).join("");
+  document.getElementById("status").textContent =
+    hits.length + " of " + DATA.count + " packages. " +
+    DATA.rotated_count + " have rotated keys. Generated " + esc(DATA.generated) + ".";
+}
 
 fetch("data.json").then(r => r.json()).then(d => {
   DATA = d;
-  document.getElementById("status").textContent =
-    d.count + " packages, " + d.rotated_count + " with rotated keys, generated " + esc(d.generated);
-  render("");
-}).catch(e => {
+  render();
+}).catch(() => {
   document.getElementById("status").textContent = "Failed to load data.json";
 });
 
-function render(query) {
-  const q = (query || "").trim().toLowerCase();
-  const out = document.getElementById("results");
-  if (!DATA) return;
-  if (q.length < 2) {
-    out.innerHTML = '<p class="sub">Type at least two characters of a package name.</p>';
-    return;
-  }
-  const hits = DATA.packages.filter(p => p.package.toLowerCase().includes(q)).slice(0, 60);
-  if (!hits.length) {
-    out.innerHTML = '<p class="sub">No package name matches. Not being listed here means unverified, not untrusted.</p>';
-    return;
-  }
-  out.innerHTML = hits.map(p => appCard(p)).join("");
-  out.querySelectorAll("button[data-fp]").forEach(b => {
-    b.addEventListener("click", () => {
-      const pkg = b.getAttribute("data-pkg");
-      const fps = JSON.parse(b.getAttribute("data-fp"));
-      navigator.clipboard.writeText(pkg + "\n" + fps.join("\n"));
-      const old = b.textContent;
-      b.textContent = "Copied";
-      setTimeout(() => b.textContent = old, 1200);
-    });
-  });
-}
-
-function appCard(p) {
-  const rounds = p.rotated && p.rotated.length;
-  let html = '<div class="app"><div class="pkg">' + esc(p.package) +
-    (rounds ? '<span class="tag">rotated</span>' : "") + "</div>";
-
-  html += '<div class="row"><span class="label">AppVerifier string</span>';
-  p.all_fingerprints.forEach(fp => {
-    const isRotated = p.rotated.includes(fp);
-    html += '<div class="fp' + (isRotated ? " rotated" : "") + '">' + esc(fp) + "</div>";
-  });
-  html += '<button data-pkg="' + esc(p.package) + '" data-fp="' +
-    esc(JSON.stringify(p.all_fingerprints)) + '">Copy</button></div>';
-
-  p.signatures.forEach(sig => {
-    sig.sources.forEach(src => {
-      const meta = [];
-      if (src.issue) meta.push(esc(src.issue));
-      if (src.sha256) meta.push("sha256 " + esc(src.sha256.slice(0, 16)) + "...");
-      html += '<div class="src">' + esc(src.name) +
-        (meta.length ? ' <span class="meta">(' + meta.join(", ") + ")</span>" : "") + "</div>";
-    });
-  });
-
-  if (rounds) {
-    html += '<div class="src meta">Rotated keys observed on the current APK by AppVerifier BG. Not part of the upstream entry yet.</div>';
-  }
-
-  html += "</div>";
-  return html;
-}
-
-document.getElementById("q").addEventListener("input", e => {
+document.getElementById("q").addEventListener("input", () => {
   clearTimeout(window._t);
-  const v = e.target.value;
-  window._t = setTimeout(() => render(v), 100);
+  window._t = setTimeout(render, 120);
 });
+document.getElementById("rotatedOnly").addEventListener("change", render);
 </script>
 </body>
 </html>

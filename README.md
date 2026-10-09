@@ -1,4 +1,4 @@
-# AppVerifier DB Lookup
+# AppVerifier BG Database Lookup
 
 An unofficial, frequently refreshed web view of the [Privacy Guides verified-apps](https://github.com/privacyguides/verified-apps) signing certificate database. It regenerates daily and merges in the rotated keys observed by [AppVerifier BG](https://github.com/RoundSalmon4/AppVerifierBG), so it often shows newer expected keys than the upstream listing.
 

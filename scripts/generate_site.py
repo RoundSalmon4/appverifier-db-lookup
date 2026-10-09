@@ -67,7 +67,7 @@ def parse_upstream(entries):
                 })
             if fps or sources:
                 signatures.append({"fingerprints": fps, "sources": sources})
-        packages[pkg] = {"signatures": signatures, "rotated": []}
+        packages[pkg] = {"signatures": signatures, "rotated": [], "rotated_issue": None}
     return packages
 
 
@@ -92,11 +92,14 @@ def parse_rotated(path):
 def build(upstream_entries, rotated):
     packages = parse_upstream(upstream_entries)
     for pkg, info in rotated.items():
-        node = packages.setdefault(pkg, {"signatures": [], "rotated": []})
+        node = packages.setdefault(pkg, {"signatures": [], "rotated": [], "rotated_issue": None})
         known = set()
         for sig in node["signatures"]:
             known.update(sig["fingerprints"])
-        node["rotated"] = [k for k in info["keys"] if k not in known]
+        extra = [k for k in info["keys"] if k not in known]
+        node["rotated"] = extra
+        if extra:
+            node["rotated_issue"] = info.get("source_issue")
 
     result = []
     for pkg, node in packages.items():
@@ -112,6 +115,7 @@ def build(upstream_entries, rotated):
             "package": pkg,
             "signatures": node["signatures"],
             "rotated": node["rotated"],
+            "rotated_issue": node.get("rotated_issue"),
             "all_fingerprints": all_fps,
         })
     result.sort(key=lambda p: p["package"])
